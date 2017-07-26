@@ -1,0 +1,209 @@
+﻿@using GaleriUygulamasi.Models
+
+@{
+    ViewBag.Title = "Galeri";
+}
+
+<h2>Galeri</h2>
+
+<style>
+    .file-content {
+        max-height: 500px;
+    }
+
+
+
+    .form-control[disabled], fieldset[disabled] .form-control {
+        cursor: text;
+    }
+
+    .modal-body .img-responsive {
+        max-width: 545px;
+    }
+
+    textarea {
+        height: 150px !important;
+    }
+
+    input, select, textarea {
+        max-width: 100%;
+    }
+
+    .modal-body {
+        padding: 0;
+    }
+
+    i {
+        margin-right: 3px;
+    }
+
+    .file-name {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+</style>
+
+@{
+    GaleriYonetimContext context = new GaleriYonetimContext();
+    var List = (from p in context.Dosya
+                orderby p.KayitTarihi descending
+                select p).ToList();
+}
+
+<div class="container">
+    <div class="row">
+
+        @for (int i = 0; i < List.Count; i++)
+        {
+            <div class="col-md-4">
+                <div class="thumbnail">
+                    <img src="http://lorempixel.com/output/people-q-c-640-480-1.jpg" alt="Alternate Text" />
+                    <div class="caption">
+                        <div>
+                            <h3>
+                                @{
+                                    if (string.IsNullOrEmpty(List[i].DosyaAdi))
+                                    {
+                                        @("Başlık Satırı")
+                                    }
+                                    else
+                                    {
+                                        if (List[i].DosyaAdi.Length > 15)
+                                        {
+                                            @(List[i].DosyaAdi.Substring(0, 12) + "...");
+                                        }
+                                        else
+                                        {
+                                            @List[i].DosyaAdi;
+                                        }
+                                    }
+
+                                }
+                            </h3>
+                        </div>
+                        <div>
+                            <a href="#fileEditModal" onclick="funcGetFileDetail(@List[i].ID)" data-toggle="modal" class="btn btn-primary pull-right"><i class="glyphicon glyphicon-wrench"></i></a>
+                        </div>
+                        <div>
+                            @{
+                                if (!string.IsNullOrEmpty(List[i].Aciklama))
+                                {
+                                    if (List[i].Aciklama.Length > 25)
+                                    {
+                                        @(List[i].Aciklama.Substring(0, 22) + "...");
+                                    }
+                                    else
+                                    {
+                                        @List[i].Aciklama;
+                                    }
+                                }
+                                else
+                                {
+                                    @("Açıklama Satırı")
+                                }
+                            }
+                        </div>
+                        <hr />
+                        <div class="bottom">
+                            <i class="glyphicon glyphicon-hdd pull-left"></i>@List[i].BoyutKisaltma
+                            <i class="glyphicon @List[i].Ikon pull-right"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+                                }
+
+        <div id="fileEditModal" class="modal">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-body">
+                        <div class="row">
+                            <div class="col-md-8">
+                                <div class="file-content">
+
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-area" style="padding-top:15px; padding-right:15px;">
+                                    <form role="form">
+                                        <div class="form-group">
+                                            <label class="control-label"><i class="glyphicon glyphicon-folder-open"></i><span id="orjinalAdi"></span></label>
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="control-label"><i class="glyphicon glyphicon-hdd"></i> <span id="dosyaBoyutu"></span></label>
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="control-label"><i class="glyphicon glyphicon-tags"></i><span id="dosyaTipi"></span></label>
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="control-label">Url Yolu :</label>
+                                            <input id="urlYolu" disabled class="form-control has-success" style="font-size:20px;" value="http://" www.google.com.tr" />
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="control-label">Başlık :</label>
+                                            <input id="dosyaBaslik" type="text" class="form-control" placeholder="Başlık">
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="control-label">Açıklama :</label>
+                                            <textarea id="dosyaAciklama" class="form-control" type="textarea" placeholder="Açıklama"></textarea>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <div class="pull-left">
+                            <a id="btnOnizle" target="_blank" class="btn btn-warning"><i class="glyphicon glyphicon-eye-open"></i> Önizle</a>
+                        </div>
+                        <div class="pull-right">
+                            <button type="button" class="btn btn-danger" data-dismiss="modal"><i class="glyphicon glyphicon-remove"></i> Kapat</button>
+                            <button type="button" class="btn btn-success" onclick="funcUpdateFile()"><i class="glyphicon glyphicon-ok"></i> Kaydet</button>
+                        </div>
+                    </div>
+                </div><!-- /.modal-content -->
+            </div><!-- /.modal-dialog -->
+        </div>
+    </div>
+    <script>
+        var tempDosyaID = 0;
+        function funcGetFileDetail(e) {
+            tempDosyaID = e;
+            $.ajax({
+                url: "/Home/GetFileDetailByID?ID=" + e,
+                success: function (e) {
+                    $("#orjinalAdi").html(e.DosyaAdi);
+                    $("#dosyaBoyutu").html(e.BoyutKisaltma);
+                    $("#dosyaTipi").html(e.DosyaTipi);
+                    $("#urlYolu").html(e.UrlYolu);
+                    $("#dosyaBaslik").val(e.Baslik);
+                    $("#dosyaAciklama").html(e.Aciklama);
+                    $("#btnOnizle").attr("href", e.UrlYolu);
+                    if (e.DosyaTipi.indexOf("image") != -1) {
+                        $(".file-content").html('<img class="img-responsive" src=' + e.UrlYolu + '/>');
+                    }
+                    else if (e.DosyaTipi.indexOf("video") != -1 || e.DosyaTipi.indexOf("audio") != -1 || e.DosyaTipi.indexOf("pdf") != -1) {
+                        $(".file-content").html('<iframe src =' + e.UrlYolu + ' width="550" height="500"></iframe>')
+                    }
+                    else {
+                        $(".file-content").html("<i class='glyphicon glyphicon-file' style='font-size:400px;padding:50px;'></i>")
+                    }
+                }
+            })
+        }
+
+        function funcUpdateFile() {
+            $.ajax({
+                url: "/Home/UpdateFile",
+                data: { ID: tempDosyaID, Baslik: $("#dosyaBaslik").val(), Aciklama: $("#dosyaAciklama").val() },
+                type:"POST",
+                success: function (e) {
+                    if (e === "E") {
+                        $("#fileEditModal").modal("hide");
+                    }
+                }
+            })
+        }
+    </script>
+</div>
